@@ -32,3 +32,21 @@ export async function createNote(title, contents) {
   const id = result.insertId
   return getNote(id)
 }
+
+export async function getProduct(id) {
+  const [rows] = await pool.query(`
+  SELECT * 
+  FROM products
+  WHERE product_id = ?
+  `, [id])
+  return rows[0]
+}
+
+export async function getProductVariants(id) {
+  const [rows] = await pool.query(`
+  SELECT * 
+  FROM product_variants
+  WHERE product_id = ?
+  `, [id])
+  return rows
+}

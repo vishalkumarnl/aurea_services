@@ -1,7 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 
-import { getNotes, getNote, createNote } from './database.js'
+import { getNotes, getNote, createNote, getProduct, getProductVariants } from './database.js'
 
 const app = express()
 
@@ -22,6 +22,18 @@ app.post("/notes", async (req, res) => {
   const { title, contents } = req.body
   const note = await createNote(title, contents)
   res.status(201).send(note)
+})
+
+app.get("/product/:id", async (req, res) => {
+  const id = req.params.id
+  const note = await getProduct(id)
+  res.send(note)
+})
+
+app.get("/productvariants/:id", async (req, res) => {
+  const id = req.params.id
+  const note = await getProductVariants(id)
+  res.send(note)
 })
 
 
