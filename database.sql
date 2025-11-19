@@ -117,3 +117,12 @@ VALUES
 -- Polo Black (M)
 (5, 6, 'https://example.com/images/polo_black_front.jpg', 1),
 (6, 6, 'https://example.com/images/polo_black_side.jpg', 2);
+
+
+CREATE TABLE user (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  gender VARCHAR(10) NOT NULL
+);
