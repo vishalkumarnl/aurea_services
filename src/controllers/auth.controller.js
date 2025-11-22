@@ -5,7 +5,7 @@ import { generateTokens } from "../utils/generateTokens.js";
 import { jwtConfig } from "../config/jwt.js";
 
 export const register = async (req, res) => {
-  const { email, password, fullName: name, gender = "" ,mobile} = req.body;
+  const { email, password, fullName: name, gender = "", mobile } = req.body;
 
   const hashed = await bcrypt.hash(password, 10);
 
@@ -23,7 +23,9 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   const { email, mobile, password } = req.body;
 
-  const [rows] = await db.query("SELECT * FROM users WHERE mobile = ?", [mobile]);
+  const [rows] = await db.query("SELECT * FROM users WHERE mobile = ?", [
+    mobile,
+  ]);
   const user = rows[0];
 
   if (!user) return res.status(404).json({ message: "User not found" });
@@ -31,54 +33,65 @@ export const login = async (req, res) => {
   const match = await bcrypt.compare(password, user.password);
   if (!match) return res.status(401).json({ message: "Incorrect password" });
 
+  const { accessToken, refreshToken } = generateTokens(user);
   console.log("REFRESH:", user);
-  const tokens = generateTokens(user);
-  console.log("REFRESH1:", user);
 
-  await db.query(
-    "INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, NOW() + INTERVAL 7 DAY)",
-    [user.id, tokens.refreshToken]
-  );
+  res.cookie("access_token", accessToken, {
+    httpOnly: true, // cookie not accessible via JS
+    secure: false, // must be false for HTTP (localhost)
+    sameSite: "lax", // allows cross-port requests in dev
+    path: "/", // ensures cookie is sent for all routes
+    maxAge: 15 * 60 * 1000, // 15 minutes
+  });
 
-  res.json(tokens);
+  res.cookie("refresh_token", refreshToken, {
+    httpOnly: true,
+    secure: false, // because localhost is NOT https
+    sameSite: "lax", // required for cross-port local dev
+    path: "/",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
+  return res.json({ user });
 };
 
 export const refresh = async (req, res) => {
-  const { token } = req.body;
+  const token = req.cookies.refresh_token;
 
   if (!token) return res.status(401).json({ message: "No refresh token" });
-
-  const [rows] = await db.query(
-    "SELECT * FROM refresh_tokens WHERE token = ?",
-    [token]
-  );
-
-  if (!rows.length)
-    return res.status(403).json({ message: "Invalid refresh token" });
 
   jwt.verify(token, jwtConfig.refreshSecret, async (err, payload) => {
     if (err) return res.status(403).json({ message: "Expired refresh token" });
 
-    const [users] = await db.query("SELECT * FROM users WHERE id = ?", [
-      payload.id,
-    ]);
-    const user = users[0];
+    const { accessToken } = generateTokens(payload);
 
-    const tokens = generateTokens(user);
+    // 3. Set new access token cookie
+    res.cookie("access_token", accessToken, {
+      httpOnly: true,
+      secure: false, // because localhost is NOT https
+      sameSite: "lax", // required for cross-port local dev
+      path: "/",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
 
-    await db.query(
-      "UPDATE refresh_tokens SET token = ?, expires_at = NOW() + INTERVAL 7 DAY WHERE id = ?",
-      [tokens.refreshToken, rows[0].id]
-    );
-
-    res.json(tokens);
+    return res.json({ ok: true });
   });
 };
 
 export const logout = async (req, res) => {
-  const { token } = req.body;
+  res.clearCookie("access_token", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+    path: "/",
+  });
 
-  await db.query("DELETE FROM refresh_tokens WHERE token = ?", [token]);
+  res.clearCookie("refresh_token", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+    path: "/",
+  });
 
   res.json({ message: "Logged out" });
 };
