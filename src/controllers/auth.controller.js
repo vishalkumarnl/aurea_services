@@ -20,6 +20,31 @@ export const register = async (req, res) => {
   });
 };
 
+export const resetPassword = async (req, res) => {
+  try {
+    const { password, mobile } = req.body;
+
+    // Check if user exists
+    const [rows] = await db.execute("SELECT user_id FROM users WHERE mobile = ?", [
+      mobile,
+    ]);
+    if (rows.length === 0)
+      return res.status(404).json({ message: "User not found" });
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    await db.execute("UPDATE users SET password = ? WHERE mobile = ?", [
+      hashed,
+      mobile,
+    ]);
+
+    res.status(200).json({ message: "Reset password successful" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const login = async (req, res) => {
   const { email, mobile, password } = req.body;
 
@@ -52,7 +77,14 @@ export const login = async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 
-  return res.json({ user });
+  return res.json({
+    user: {
+      name: user.name,
+      email: user.email,
+      gender: user.gender,
+      mobile: user.mobile,
+    },
+  });
 };
 
 export const refresh = async (req, res) => {

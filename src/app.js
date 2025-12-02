@@ -75,7 +75,7 @@ app.post("/verifyOtp", async (req, res) => {
   // console.error(err.stack)
   console.log("req body:", req.body);
   if (req.body.otp !== "123456") {
-    return res.status(500).send("Invalid OTP");
+    return res.status(500).send({message: "Invalid OTP"});
   }
   res.status(200).json({
     success: true,
