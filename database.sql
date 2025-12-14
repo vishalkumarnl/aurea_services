@@ -170,6 +170,9 @@ CREATE TABLE cart_items (
     FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id)
 );
 
+ALTER TABLE cart_items
+ADD UNIQUE KEY unique_cart_item (cart_id, variant_id);
+
 
 CREATE TABLE wishlist (
     wishlist_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

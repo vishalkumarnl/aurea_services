@@ -1,6 +1,7 @@
 import express from "express";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import cartRoutes from "./routes/cart.routes.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
@@ -139,5 +140,6 @@ console.log('Server is running on por',result)
 
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
+app.use("/cart", cartRoutes);
 
 export default app;
